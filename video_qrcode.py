@@ -2,6 +2,7 @@ from cmath import inf
 import cv2
 import numpy as np
 import requests
+import cvzone
 from pyzbar.pyzbar import decode
 import json
 import time
@@ -135,7 +136,8 @@ class PontoQrCode:
             myDataList = f.read().splitlines()
 
         pTime = 0
-        scan = True
+        limit_count = 0
+        user_active = False
 
         while True:
             success, img = video.read()
@@ -144,19 +146,11 @@ class PontoQrCode:
 
                 if myData in self.teste()['id'] :
                     myColor = (0,255,0)
-                    #info_user = self.detalhes_user(myData)
-                    #myOutput = info_user['id'] #'Authorized'
-                    
-                    
-                    #time.sleep(1)
-                    #_bater_ponto = self.bater_ponto(myData, info_user['wallet'])
-                    #time.sleep(5)
-                    #sys.exit('O seu ponto foi registrado com sucesso!')
                     myOutput = f"{self.teste()['name']}"
 
-                    #scan = False
-                    #cv2.putText(img, f'Ponto batido com sucesso', (20, 70), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
-                    #break
+                    user_active =  True
+                    limit_count += 1
+
                 else:
                     myOutput = 'Usuario nao autorizado'
                     myColor = (255, 0, 255)
@@ -175,12 +169,18 @@ class PontoQrCode:
                 bbox = int(pts2[0]), int(pts2[1]), \
                        int(pts2[2]), int(pts2[3])
                 
-
-                if scan:
-                    img = self.fancyDraw(img, bbox)
-                    cv2.putText(img, f'{myOutput}', (bbox[0]-25, bbox[1]-20), cv2.FONT_HERSHEY_PLAIN, 2, myColor, 2)
-                    cv2.putText(img, f'FPS: {int(fps)}', (20, 70), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
+                img = self.fancyDraw(img, bbox)
+                cv2.putText(img, f'{myOutput}', (bbox[0]-25, bbox[1]-20), cv2.FONT_HERSHEY_PLAIN, 2, myColor, 2)
+                cv2.putText(img, f'FPS: {int(fps)}', (20, 70), cv2.FONT_HERSHEY_PLAIN, 2, (0, 255, 0), 2)
             
+            if user_active == True and limit_count >= 30:
+                img = cv2.imread("registrado.webp")
+                cv2.putText(img, str(f'Concluido!').zfill(2), (75, 225), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 255), 2)
+ 
+                #_bater_ponto = self.bater_ponto(myData, info_user['wallet'])
+                    #if _bater_ponto.status_code == 201:
+                    #    cv2.putText(img, f'Ponto batido com sucesso', (20, 70), cv2.FONT_HERSHEY_PLAIN, 3, (0, 255, 0), 2)
+
 
             cv2.imshow('TK Global Technology',img)
             key = cv2.waitKey(1)
@@ -189,6 +189,8 @@ class PontoQrCode:
                 cv2.imwrite(f"users/{self.teste()['name']}.png", img)
                 break
             
+            
+
 
     def main(self):
         #img = cv2.imread('1.png')
